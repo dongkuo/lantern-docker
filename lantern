@@ -1,0 +1,50 @@
+#!/usr/bin/python3
+
+import uuid
+import random
+import sys
+import subprocess
+
+
+def rand_mac():
+    local_mac = uuid.uuid1().hex[-12:]
+    mac = [random.randint(0x00, 0xff), random.randint(0x00, 0xff)]
+    s = [local_mac[0:2], local_mac[2:4], local_mac[4:6], local_mac[6:8]]
+    for item in mac:
+        s.append(str("%02x" % item))
+    return (':'.join(s))
+
+
+def check_running():
+    id = subprocess.getoutput('docker ps -q -f name=lantern')
+    return id
+
+
+def check_container():
+    id = subprocess.getoutput('docker ps -aq -f name=lantern')
+    return id
+
+
+def start():
+    stop()
+    id = check_container()
+    print('start lantern container...')
+    subprocess.getoutput(
+        'docker run -itd --name lantern -p 8888:8888 -p 9999:9999  --mac-address %s derker/lantern' % rand_mac())
+
+
+def stop():
+    if check_running():
+        print('stop lantern container...')
+        subprocess.getoutput('docker stop lantern')
+    if check_container():
+        print('delete lantern container...')
+        subprocess.getoutput('docker rm lantern')
+
+
+if __name__ == '__main__':
+    action = len(sys.argv) < 2 or sys.argv[1]
+    if action == 'stop':
+        stop()
+    else:
+        start()
